@@ -1,15 +1,12 @@
 #!/bin/sh
 set -eu
 
-QBT_URL="${QBT_URL:-http://qbittorrent:8080}"
+QBT_URL="${QBT_URL:-http://127.0.0.1:8080}"
+FWD_FILE="${FWD_FILE:-/forwarded/forwarded_port}"
 PORT_FILE="${PORT_FILE:-/run/pia-port.txt}"
-FWD_FILE="${FWD_FILE:-/forwarded/forwarded_port}"  # container path
 
-INTERVAL="${INTERVAL:-60}"
-START_DELAY="${START_DELAY:-15}"
-
-echo "[INFO] qBittorrent URL: $QBT_URL"
-echo "[INFO] Forwarded port file: $FWD_FILE"
+INTERVAL=60
+START_DELAY=15
 
 sleep "$START_DELAY"
 
@@ -32,10 +29,11 @@ while true; do
         echo "[INFO] New forwarded port detected: $port"
         echo "$port" > "$PORT_FILE"
 
+        # Push the port to qBittorrent (torrenting port)
         curl -sf -X POST \
             -d "json={\"listen_port\": $port}" \
             "$QBT_URL/api/v2/app/setPreferences" \
-            && echo "[INFO] qBittorrent port updated"
+            && echo "[INFO] qBittorrent torrenting port updated to $port"
 
         last_port="$port"
     fi
