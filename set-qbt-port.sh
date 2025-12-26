@@ -2,14 +2,14 @@
 set -eu
 
 QBT_URL="${QBT_URL:-http://qbittorrent:8080}"
-PIA_LOG="${PIA_LOG:-/logs/gluetun.log}"
 PORT_FILE="${PORT_FILE:-/run/pia-port.txt}"
+FWD_FILE="${FWD_FILE:-/forwarded/forwarded_port}"  # container path
 
 INTERVAL="${INTERVAL:-60}"
 START_DELAY="${START_DELAY:-15}"
 
 echo "[INFO] qBittorrent URL: $QBT_URL"
-echo "[INFO] PIA log file: $PIA_LOG"
+echo "[INFO] Forwarded port file: $FWD_FILE"
 
 sleep "$START_DELAY"
 
@@ -22,13 +22,11 @@ echo "[INFO] qBittorrent API ready"
 last_port=""
 
 while true; do
-    port="$(
-        grep "Forwarded port" "$PIA_LOG" 2>/dev/null \
-        | tail -n1 \
-        | sed -r 's/\x1B\[[0-9;]*[mK]//g' \
-        | tr -d '\r' \
-        | tr -cd '0-9'
-    )"
+    if [ -f "$FWD_FILE" ]; then
+        port="$(cat "$FWD_FILE" | tr -d '[:space:]')"
+    else
+        port=""
+    fi
 
     if [ -n "$port" ] && [ "$port" != "$last_port" ]; then
         echo "[INFO] New forwarded port detected: $port"
